@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
 import './globals.css'
 
-export const metadata: Metadata = {
-  title: 'Nail Technician App',
-  description: 'Track services, tips, commissions, and turns',
-  manifest: '/manifest.json',
-  themeColor: '#0A0A0C',
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
-}
+export const metadata = {
+  title: "Dashboard",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#000000",
+};
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
