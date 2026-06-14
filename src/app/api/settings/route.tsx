@@ -8,7 +8,7 @@ export async function GET() {
 
   const { data: emp } = await supabase
     .from('employees')
-    .select('commission_percentage, quick_buttons')
+    .select('commission_percentage, quick_buttons, default_range_start, default_range_end')
     .eq('auth_user_id', user.id)
     .single()
 
@@ -21,11 +21,11 @@ export async function PUT(request: Request) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { commission_percentage, quick_buttons } = await request.json()
+  const { commission_percentage, quick_buttons, default_range_start, default_range_end } = await request.json()
 
   const { error } = await supabase
     .from('employees')
-    .update({ commission_percentage, quick_buttons })
+    .update({ commission_percentage, quick_buttons, default_range_start, default_range_end })
     .eq('auth_user_id', user.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
