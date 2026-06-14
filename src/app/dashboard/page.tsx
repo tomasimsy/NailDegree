@@ -2,6 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
+
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -96,14 +97,12 @@ export default function DashboardPage() {
       setCommissionPct(emp.commission_percentage || 15)
       const btns = emp.quick_buttons || [35, 45, 40, 55, 65]
       setQuickButtons(btns)
-      // Set default range if exists
       if (emp.default_range_start && emp.default_range_end) {
         setRangeStart(emp.default_range_start)
         setRangeEnd(emp.default_range_end)
         setDefaultRangeStart(emp.default_range_start)
         setDefaultRangeEnd(emp.default_range_end)
       } else {
-        // Fallback: last 7 days
         const end = new Date()
         const start = new Date()
         start.setDate(end.getDate() - 7)
@@ -131,7 +130,6 @@ export default function DashboardPage() {
     }
   }
 
-  // Fetch custom range data
   const fetchRangeData = async (start: string, end: string) => {
     const res = await fetch(`/api/transactions/range?start=${start}&end=${end}`)
     if (res.ok) {
@@ -142,14 +140,12 @@ export default function DashboardPage() {
     }
   }
 
-  // Auto-load range when start/end change (debounced or manual apply)
   const applyRange = () => {
     if (rangeStart && rangeEnd) {
       fetchRangeData(rangeStart, rangeEnd)
     }
   }
 
-  // Save current range as default
   const saveDefaultRange = async () => {
     setIsSavingRange(true)
     const res = await fetch('/api/settings', {
@@ -185,11 +181,11 @@ export default function DashboardPage() {
     setActivePressBtn(null)
 
     if (res.ok) {
-      setMessage(`Recorded $${price} + $${tipAmount} tip`)
+      setMessage(`Successfully logged $${price} with a $${tipAmount} tip!`)
       setTipAmount(0)
       await fetchData()
-      await applyRange() // refresh custom range totals after new service
-      setTimeout(() => setMessage(''), 3000)
+      await applyRange()
+      setTimeout(() => setMessage(''), 4000)
     } else {
       const err = await res.json()
       setMessage(`Error: ${err.error}`)
@@ -217,7 +213,7 @@ export default function DashboardPage() {
   }
 
   const deleteTransaction = async (id: number) => {
-    if (!confirm('Delete this service?')) return
+    if (!confirm('Are you sure you want to remove this transaction?')) return
     setDeletingId(id)
 
     try {
@@ -269,7 +265,6 @@ export default function DashboardPage() {
     router.push('/login')
   }
 
-  // Load range on mount and when start/end changes (apply button)
   useEffect(() => {
     if (rangeStart && rangeEnd) {
       fetchRangeData(rangeStart, rangeEnd)
@@ -277,50 +272,64 @@ export default function DashboardPage() {
   }, [rangeStart, rangeEnd])
 
   return (
-    <div className={`min-h-screen bg-[#181920] text-neutral-100 flex flex-col font-sans selection:bg-neutral-700 transition-opacity duration-300 ${isLoggingOut ? 'opacity-40 pointer-events-none' : 'opacity-100'}`}>
+    <div className={`min-h-screen bg-[#111217] text-slate-100 flex flex-col font-sans antialiased selection:bg-indigo-500/30 transition-opacity duration-300 ${isLoggingOut ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
       
-      {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#21232d]/90 backdrop-blur-md border-b border-neutral-700/50 px-5 py-4 flex justify-between items-center shadow-sm">
-        <div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 block">Operator Session</span>
-          <h1 className="text-sm font-semibold text-white">{techName || 'System Tech'}</h1>
+      {/* Premium Navigation Header */}
+      <header className="sticky top-0 z-40 bg-[#161920]/90 backdrop-blur-md border-b border-slate-800/60 px-5 py-4 flex justify-between items-center shadow-md shadow-black/10">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-md shadow-indigo-600/20">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block leading-tight">Active Portal</span>
+            <h1 className="text-sm font-bold text-white tracking-tight">{techName || 'System Operator'}</h1>
+          </div>
         </div>
-        <div className="flex items-center gap-1 bg-[#121318]/80 p-1 rounded-full border border-neutral-700/40">
-          <button onClick={openSettings} className="p-2 text-neutral-300 hover:text-white hover:bg-neutral-700/50 rounded-full transition-all active:scale-90">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+
+        <div className="flex items-center gap-1.5 bg-[#1b1e26] p-1 rounded-xl border border-slate-800">
+          <button onClick={openSettings} className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all active:scale-95">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </button>
-          <button onClick={handleLogout} className="p-2 text-neutral-400 hover:text-red-400 hover:bg-neutral-700/50 rounded-full transition-all active:scale-90">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="w-[1px] h-4 bg-slate-800 self-center mx-0.5" />
+          <button onClick={handleLogout} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-all active:scale-95">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 max-w-md w-full mx-auto p-4 space-y-4 pb-28">
+      {/* Primary Layout Engine */}
+      <main className="flex-1 max-w-md w-full mx-auto p-4 space-y-5 pb-28">
         
-        {/* Service Entry Panel */}
-        <section className="bg-[#21232d] rounded-2xl border border-neutral-700/40 p-4 space-y-4 shadow-sm">
+        {/* Module 1: Transaction Entry Panel */}
+        <section className="bg-[#1a1d26] rounded-2xl border border-slate-800/80 p-5 space-y-4 shadow-lg shadow-black/10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 opacity-80" />
+          
           <div className="flex justify-between items-center">
-            <span className="text-xs font-semibold tracking-wide text-neutral-300">Staged Tip Value</span>
-            <span className="text-[10px] font-mono text-neutral-400 bg-[#181920] px-2 py-0.5 rounded border border-neutral-700/40">Optional Modifier</span>
+            <span className="text-xs font-bold tracking-wider text-indigo-400 uppercase">Staged Modifier</span>
+            <span className="text-[10px] font-mono text-slate-400 bg-[#12141a] px-2.5 py-1 rounded-md border border-slate-800">Tip Allocation</span>
           </div>
-          <div className="relative">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 font-mono text-sm">$</span>
+
+          <div className="relative group">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold font-mono text-base transition-colors group-focus-within:text-indigo-400">$</span>
             <input
               type="number"
               step="0.01"
               value={tipAmount || ''}
               onChange={(e) => setTipAmount(parseFloat(e.target.value) || 0)}
-              className="w-full bg-[#2a2d3a] border border-neutral-700 rounded-xl pl-8 pr-4 py-3 text-sm font-mono text-white placeholder:text-neutral-500 focus:outline-none focus:border-neutral-500 focus:ring-1 focus:ring-neutral-500 transition-all shadow-inner"
+              className="w-full bg-[#12141a] border border-slate-800 rounded-xl pl-9 pr-4 py-3 text-base font-mono font-bold text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all shadow-inner"
               placeholder="0.00"
             />
           </div>
-          <div className="space-y-2">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 block">Execute Base Service</label>
+
+          <div className="space-y-2.5">
+            <label className="text-[11px] uppercase font-extrabold tracking-wider text-slate-400 block">Execute Quick Run</label>
             <div className="grid grid-cols-5 gap-2">
               {quickButtons.map((price, idx) => {
                 const isLoggingThis = activePressBtn === price
@@ -329,14 +338,14 @@ export default function DashboardPage() {
                     key={idx}
                     disabled={activePressBtn !== null}
                     onClick={() => recordService(price)}
-                    className={`relative font-mono font-bold py-2.5 rounded-xl text-xs border active:scale-95 transition-all shadow-sm flex items-center justify-center ${
+                    className={`relative font-mono font-extrabold py-3 rounded-xl text-xs border shadow-md transition-all flex items-center justify-center transform active:scale-95 ${
                       isLoggingThis 
-                        ? 'bg-neutral-600 border-neutral-400 text-neutral-300 scale-95' 
-                        : 'bg-[#2a2d3a] hover:bg-[#343848] text-white border-neutral-700'
+                        ? 'bg-indigo-600 border-indigo-400 text-white shadow-none scale-95' 
+                        : 'bg-[#222733] hover:bg-[#2a303f] text-white border-slate-700 hover:border-slate-600'
                     }`}
                   >
                     {isLoggingThis ? (
-                      <svg className="animate-spin h-3 w-3 text-white" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
@@ -346,56 +355,62 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
+
           {message && (
-            <div className="text-center text-xs py-2 bg-emerald-500/10 rounded-lg text-emerald-400 border border-emerald-500/30 font-mono transition-all">
-              {message}
+            <div className="text-center text-xs py-2.5 bg-emerald-500/10 rounded-xl text-emerald-400 border border-emerald-500/20 font-mono transition-all animate-pulse">
+              🎉 {message}
             </div>
           )}
         </section>
 
-        {/* Daily Runs Log */}
-        <section className="bg-[#21232d] rounded-2xl border border-neutral-700/40 p-4 shadow-sm">
-          <div className="flex justify-between items-center mb-3">
-            <span className="text-xs font-semibold tracking-wide text-neutral-300">Daily Runs Log</span>
-            <span className="text-[10px] font-mono bg-[#181920] text-neutral-300 px-2 py-0.5 rounded-full border border-neutral-700/40">
-              {transactions.length} Active
+        {/* Module 2: Live Session Ledger */}
+        <section className="bg-[#1a1d26] rounded-2xl border border-slate-800/80 p-5 shadow-lg shadow-black/10">
+          <div className="flex justify-between items-center mb-3.5">
+            <span className="text-xs font-bold tracking-wider text-purple-400 uppercase">Daily Session Runs</span>
+            <span className="text-[10px] font-mono font-bold bg-[#12141a] text-slate-300 px-2.5 py-1 rounded-md border border-slate-800">
+              {transactions.length} Recorded
             </span>
           </div>
+
           {transactions.length === 0 || !Array.isArray(transactions) ? (
-            <div className="text-center py-8 bg-[#181920]/50 rounded-xl border border-dashed border-neutral-700">
-              <p className="text-xs text-neutral-400 font-mono">No actions logged today</p>
+            <div className="text-center py-10 bg-[#12141a]/50 rounded-xl border border-dashed border-slate-800">
+              <p className="text-xs text-slate-500 font-mono">No actions recorded in current shift</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1 custom-scrollbar">
+            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
               {transactions.map((t) => {
                 const isUpdatingThisTip = updatingTipId === t.id
                 const isDeletingThisRow = deletingId === t.id
                 return (
-                  <div key={t.id} className={`flex items-center justify-between bg-[#2a2d3a] border border-neutral-700 rounded-xl p-3 transition-all duration-200 shadow-sm ${
-                    isDeletingThisRow ? 'opacity-30 scale-[0.98] border-red-500 bg-red-500/10' : 'opacity-100 scale-100'
+                  <div key={t.id} className={`flex items-center justify-between bg-[#222733] border border-slate-800/60 rounded-xl p-3.5 transition-all duration-200 shadow-sm ${
+                    isDeletingThisRow ? 'opacity-20 scale-[0.95] border-rose-500 bg-rose-500/10' : 'opacity-100 scale-100 hover:border-slate-700'
                   }`}>
-                    <div className="flex flex-col">
-                      <span className="font-mono text-sm font-bold text-white">${t.actual_price.toFixed(2)}</span>
-                      <span className="text-[10px] text-neutral-400 font-mono">
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-mono text-base font-extrabold text-white">${t.actual_price.toFixed(2)}</span>
+                      <span className="text-[10px] text-slate-400 font-semibold tracking-wide flex items-center gap-1">
+                        <svg className="w-3 h-3 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         {new Date(t.transaction_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
+                    
                     <div className="flex items-center gap-2">
                       <div className="relative flex items-center">
-                        <span className="text-[10px] font-mono text-neutral-400 absolute left-2">{isUpdatingThisTip ? '...' : 'Tip'}</span>
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 absolute left-2.5 pointer-events-none">
+                          {isUpdatingThisTip ? '...' : 'Tip'}
+                        </span>
                         <input
                           type="number"
                           step="0.01"
                           disabled={isUpdatingThisTip}
                           value={t.tip_amount}
                           onChange={(e) => updateTip(t.id, parseFloat(e.target.value) || 0)}
-                          className={`w-16 bg-[#181920] border rounded-lg pl-7 pr-1.5 py-1 text-xs font-mono text-right transition-colors focus:outline-none ${
-                            isUpdatingThisTip ? 'text-neutral-500 border-neutral-600 bg-neutral-700/50' : 'text-emerald-400 border-neutral-700 focus:border-neutral-500'
+                          className={`w-20 bg-[#12141a] border rounded-lg pl-8 pr-2 py-1.5 text-xs font-mono font-bold text-right transition-all focus:outline-none ${
+                            isUpdatingThisTip ? 'text-slate-500 border-slate-700 bg-slate-800/50' : 'text-emerald-400 border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20'
                           }`}
                         />
                       </div>
-                      <button onClick={() => deleteTransaction(t.id)} disabled={isDeletingThisRow} className={`p-1.5 rounded-lg hover:bg-[#343848] transition-colors ${isDeletingThisRow ? 'text-red-800' : 'text-neutral-400 hover:text-red-400 active:scale-75'}`}>
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <button onClick={() => deleteTransaction(t.id)} disabled={isDeletingThisRow} className={`p-2 rounded-lg hover:bg-rose-500/10 transition-colors group ${isDeletingThisRow ? 'text-rose-800' : 'text-slate-500 hover:text-rose-400 active:scale-75'}`}>
+                        <svg className="w-4 h-4 transition-transform group-hover:scale-105" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-16v1a3 3 0 003 3h4a3 3 0 003-3V3M9 7h6" />
                         </svg>
                       </button>
@@ -407,82 +422,93 @@ export default function DashboardPage() {
           )}
         </section>
 
-        {/* Custom Pay Period */}
-        <section className="bg-[#21232d] rounded-2xl border border-neutral-700/40 p-4 space-y-3 shadow-sm">
+        {/* Module 3: Custom Date Range Framework */}
+        <section className="bg-[#1a1d26] rounded-2xl border border-slate-800/80 p-5 space-y-4 shadow-lg shadow-black/10">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-semibold tracking-wide text-neutral-300">📅 Custom Pay Period</span>
-            <span className="text-[10px] font-mono text-neutral-400">Total with current rate</span>
+            <span className="text-xs font-bold tracking-wider text-amber-400 uppercase">📅 Target Pay Window</span>
+            <span className="text-[10px] font-mono text-slate-400">Live Rate Matching</span>
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex gap-2 bg-[#12141a] p-2 rounded-xl border border-slate-800/60">
             <input
               type="date"
               value={rangeStart}
               onChange={(e) => setRangeStart(e.target.value)}
-              className="flex-1 bg-[#2a2d3a] border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-neutral-500 color-scheme-dark"
+              className="flex-1 bg-[#1c1f26] border border-slate-700/60 rounded-lg px-2.5 py-2 text-xs font-mono font-bold text-white focus:outline-none focus:border-indigo-500"
+              style={{ colorScheme: 'dark' }}
             />
-            <span className="text-neutral-400 text-xs self-center">→</span>
+            <span className="text-slate-600 text-xs self-center font-bold">→</span>
             <input
               type="date"
               value={rangeEnd}
               onChange={(e) => setRangeEnd(e.target.value)}
-              className="flex-1 bg-[#2a2d3a] border border-neutral-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-neutral-500 color-scheme-dark"
+              className="flex-1 bg-[#1c1f26] border border-slate-700/60 rounded-lg px-2.5 py-2 text-xs font-mono font-bold text-white focus:outline-none focus:border-indigo-500"
+              style={{ colorScheme: 'dark' }}
             />
           </div>
+
           <div className="flex gap-2">
-            <button onClick={applyRange} className="flex-1 py-2 bg-[#2a2d3a] hover:bg-[#343848] text-white rounded-xl text-xs font-medium border border-neutral-700/60 transition-all active:scale-[0.98]">Apply Range</button>
-            <button onClick={saveDefaultRange} disabled={isSavingRange} className="flex-1 py-2 bg-[#181920] border border-neutral-700 text-neutral-300 hover:text-white rounded-xl text-xs font-medium transition-all active:scale-[0.98] disabled:opacity-50">
-              {isSavingRange ? 'Saving...' : 'Save as Default'}
+            <button onClick={applyRange} className="flex-1 py-2.5 bg-gradient-to-r from-slate-800 to-slate-700 hover:from-slate-700 hover:to-slate-600 border border-slate-700 text-white rounded-xl text-xs font-bold transition-all active:scale-[0.98] shadow-sm">Calculate Window</button>
+            <button onClick={saveDefaultRange} disabled={isSavingRange} className="flex-1 py-2.5 bg-[#12141a] border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl text-xs font-bold transition-all active:scale-[0.98] disabled:opacity-50">
+              {isSavingRange ? 'Locking...' : 'Pin as Default'}
             </button>
           </div>
           
-          {/* Range Totals Card */}
-          <div className="bg-[#181920]/60 rounded-xl p-3 space-y-2 mt-1 border border-neutral-700/30">
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <span className="text-[9px] uppercase text-neutral-400 block">Net Take Home</span>
-                <span className="text-lg font-mono font-bold text-white">${rangeTotals.net.toFixed(2)}</span>
+          {/* Custom Range Results Card */}
+          <div className="bg-[#12141a] rounded-xl p-4 space-y-3.5 border border-slate-800 shadow-inner">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-[#1c1f26] p-3 rounded-lg border border-slate-800">
+                <span className="text-[9px] uppercase font-bold tracking-wider text-indigo-400 block mb-0.5">Net Payout</span>
+                <span className="text-xl font-mono font-black text-white">${rangeTotals.net.toFixed(2)}</span>
               </div>
-              <div>
-                <span className="text-[9px] uppercase text-amber-400/80 block">Comm + Tip</span>
-                <span className="text-lg font-mono font-bold text-amber-400">${rangeTotals.commissionAndTips.toFixed(2)}</span>
+              <div className="bg-[#1c1f26] p-3 rounded-lg border border-slate-800">
+                <span className="text-[9px] uppercase font-bold tracking-wider text-amber-500 block mb-0.5">Bonus & Comm</span>
+                <span className="text-xl font-mono font-black text-amber-400">${rangeTotals.commissionAndTips.toFixed(2)}</span>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-1 text-[11px] font-mono border-t border-neutral-700/40 pt-1.5">
-              <div><span className="text-neutral-400 text-[9px] block">Gross</span>${rangeTotals.gross.toFixed(2)}</div>
-              <div><span className="text-emerald-400 text-[9px] block">Tips</span>${rangeTotals.tips.toFixed(2)}</div>
-              <div><span className="text-red-400 text-[9px] block">Comm</span>${rangeTotals.commission.toFixed(2)}</div>
+            
+            <div className="grid grid-cols-3 gap-1 text-center bg-[#161920] p-2 rounded-lg border border-slate-800 text-xs font-mono">
+              <div><span className="text-slate-500 text-[9px] font-bold block uppercase mb-0.5">Gross</span><span className="text-slate-200 font-bold">${rangeTotals.gross.toFixed(2)}</span></div>
+              <div><span className="text-emerald-500 text-[9px] font-bold block uppercase mb-0.5">Tips</span><span className="text-emerald-400 font-bold">${rangeTotals.tips.toFixed(2)}</span></div>
+              <div><span className="text-rose-400 text-[9px] font-bold block uppercase mb-0.5">Split</span><span className="text-rose-400/90 font-bold">${rangeTotals.commission.toFixed(2)}</span></div>
             </div>
           </div>
         </section>
 
-        {/* Existing Metrics (Daily, Weekly, Monthly) */}
-        <section className="space-y-3">
+        {/* Module 4: High-Fidelity Analytics Sheets */}
+        <section className="space-y-3.5">
           <div className="flex justify-between items-center px-1">
-            <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">Performance Metrics</span>
-            <span className="text-[10px] text-neutral-400 font-mono">Rate: {commissionPct}%</span>
+            <span className="text-xs font-extrabold uppercase tracking-widest text-slate-400">Macro Run Insights</span>
+            <span className="text-[10px] text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md font-mono font-bold border border-indigo-500/20">Base Rate: {commissionPct}%</span>
           </div>
-          <div className="grid grid-cols-1 gap-3">
+
+          <div className="space-y-4">
             {[
-              { period: 'Daily Summary', data: dailyTotals },
-              { period: 'Weekly Accumulation', data: weeklyTotals },
-              { period: 'Monthly Outlook', data: monthlyTotals }
+              { period: 'Daily Shift Analytics', data: dailyTotals, gradient: 'from-blue-500 to-indigo-600' },
+              { period: 'Weekly Dynamic Accumulation', data: weeklyTotals, gradient: 'from-purple-500 to-pink-600' },
+              { period: 'Monthly Outlook Performance', data: monthlyTotals, gradient: 'from-amber-500 to-orange-600' }
             ].map((metrics, idx) => (
-              <div key={idx} className="bg-[#21232d] rounded-2xl border border-neutral-700/40 p-4 space-y-3 shadow-sm">
-                <span className="text-[11px] font-bold text-neutral-300 block border-b border-neutral-700/40 pb-2">{metrics.period}</span>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#181920] p-2.5 rounded-xl border border-neutral-700/30 shadow-inner">
-                    <span className="text-[9px] uppercase font-mono tracking-wider text-neutral-400 block">Net Take Home</span>
-                    <span className="text-lg font-mono font-bold text-white">${metrics.data.net.toFixed(2)}</span>
+              <div key={idx} className="bg-[#1a1d26] rounded-2xl border border-slate-800/80 p-5 space-y-4 shadow-lg shadow-black/10 relative overflow-hidden group">
+                <div className="flex items-center gap-2 border-b border-slate-800 pb-2.5">
+                  <div className={`h-2.5 w-2.5 rounded-full bg-gradient-to-r ${metrics.gradient}`} />
+                  <span className="text-xs font-black text-white uppercase tracking-wider">{metrics.period}</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#12141a] p-3.5 rounded-xl border border-slate-800 shadow-inner">
+                    <span className="text-[9px] uppercase font-bold tracking-wider text-slate-400 block mb-0.5">Net Take-Home</span>
+                    <span className="text-xl font-mono font-black text-white tracking-tight">${metrics.data.net.toFixed(2)}</span>
                   </div>
-                  <div className="bg-[#181920] p-2.5 rounded-xl border border-neutral-700/30 shadow-inner">
-                    <span className="text-[9px] uppercase font-mono tracking-wider text-amber-400/80 block">Comm + Tip Combo</span>
-                    <span className="text-lg font-mono font-bold text-amber-400">${metrics.data.commissionAndTips.toFixed(2)}</span>
+                  <div className="bg-[#12141a] p-3.5 rounded-xl border border-slate-800 shadow-inner">
+                    <span className="text-[9px] uppercase font-mono font-bold tracking-wider text-amber-500 block mb-0.5">Combo Yield</span>
+                    <span className="text-xl font-mono font-black text-amber-400 tracking-tight">${metrics.data.commissionAndTips.toFixed(2)}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-1 bg-[#181920]/40 p-2 rounded-xl border border-neutral-700/30 text-[11px] font-mono">
-                  <div><span className="text-[9px] text-neutral-400 block">Gross</span><span className="text-neutral-200">${metrics.data.gross.toFixed(2)}</span></div>
-                  <div><span className="text-[9px] text-emerald-400 block">Tips</span><span className="text-emerald-400 font-medium">${metrics.data.tips.toFixed(2)}</span></div>
-                  <div><span className="text-[9px] text-red-400 block">Comm</span><span className="text-red-400/90">${metrics.data.commission.toFixed(2)}</span></div>
+
+                <div className="grid grid-cols-3 gap-1 bg-[#12141a]/60 p-2.5 rounded-xl border border-slate-800 text-xs font-mono text-center">
+                  <div><span className="text-[9px] text-slate-500 font-bold block uppercase mb-0.5">Gross Revenue</span><span className="text-slate-300 font-bold">${metrics.data.gross.toFixed(2)}</span></div>
+                  <div><span className="text-[9px] text-emerald-500 font-bold block uppercase mb-0.5">Shift Tips</span><span className="text-emerald-400 font-extrabold">${metrics.data.tips.toFixed(2)}</span></div>
+                  <div><span className="text-[9px] text-rose-400 font-bold block uppercase mb-0.5">Rate Cut</span><span className="text-rose-400/90 font-bold">${metrics.data.commission.toFixed(2)}</span></div>
                 </div>
               </div>
             ))}
@@ -490,44 +516,51 @@ export default function DashboardPage() {
         </section>
       </main>
 
-      {/* Settings Bottom Sheet */}
+      {/* Modern High-End Configurations Sheet */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-end justify-center z-50" onClick={() => !isSavingSettings && setShowSettings(false)}>
-          <div className="bg-[#21232d] border-t border-neutral-700 rounded-t-3xl w-full max-w-md p-5 pb-8 space-y-5 animate-slide-up" onClick={(e) => e.stopPropagation()}>
-            <div className="w-10 h-1 bg-neutral-600 rounded-full mx-auto" />
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-end justify-center z-50 transition-all duration-300" onClick={() => !isSavingSettings && setShowSettings(false)}>
+          <div className="bg-[#1a1d26] border-t-2 border-indigo-500/80 rounded-t-[2.5rem] w-full max-w-md p-6 pb-10 space-y-5 shadow-2xl shadow-black/50 transform translate-y-0" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-1" />
             <div>
-              <h3 className="text-sm font-semibold text-white">Terminal Configurations</h3>
-              <p className="text-[11px] text-neutral-400">Modify dynamic calculations and array layouts safely.</p>
+              <h3 className="text-base font-black text-white tracking-tight">System Configurations</h3>
+              <p className="text-xs text-slate-400">Safely override matrix logic limits and calculation offsets.</p>
             </div>
-            <div className="space-y-3">
+            
+            <div className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono tracking-wide text-neutral-300 block">Commission Percentage</label>
+                <label className="text-[10px] uppercase font-extrabold tracking-wider text-slate-300 block">Commission Percentage</label>
                 <input
                   type="number"
                   step="0.5"
                   disabled={isSavingSettings}
                   value={tempCommission}
                   onChange={(e) => setTempCommission(parseFloat(e.target.value) || 0)}
-                  className="w-full bg-[#2a2d3a] border border-neutral-700 rounded-xl px-4 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-neutral-500 disabled:opacity-40"
+                  className="w-full bg-[#12141a] border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white focus:outline-none focus:border-indigo-500 disabled:opacity-40"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-[10px] font-mono tracking-wide text-neutral-300 block">Array Key Modifiers (Commas)</label>
+                <label className="text-[10px] uppercase font-extrabold tracking-wider text-slate-300 block">Quick Action Array Matrix</label>
                 <input
                   type="text"
                   disabled={isSavingSettings}
-                  value={tempButtons.join(',')}
+                  value={tempButtons.join(', ')}
                   onChange={(e) => setTempButtons(e.target.value.split(',').map(v => parseFloat(v.trim())).filter(n => !isNaN(n)))}
-                  className="w-full bg-[#2a2d3a] border border-neutral-700 rounded-xl px-4 py-2.5 text-sm font-mono text-white focus:outline-none focus:border-neutral-500 disabled:opacity-40"
-                  placeholder="35,45,40,55,65"
+                  className="w-full bg-[#12141a] border border-slate-800 rounded-xl px-4 py-3 text-sm font-mono font-bold text-white focus:outline-none focus:border-indigo-500 disabled:opacity-40"
+                  placeholder="35, 45, 40, 55, 65"
                 />
               </div>
             </div>
-            <div className="flex gap-2 text-xs font-semibold pt-2">
-              <button disabled={isSavingSettings} onClick={() => setShowSettings(false)} className="flex-1 py-3 bg-[#181920] border border-neutral-700 text-neutral-300 rounded-xl active:scale-95 transition-transform disabled:opacity-40">Dismiss</button>
-              <button disabled={isSavingSettings} onClick={saveSettings} className={`flex-1 py-3 rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2 ${settingsSuccess ? 'bg-emerald-600 text-white' : 'bg-white text-black hover:bg-neutral-200'}`}>
-                {isSavingSettings && <svg className="animate-spin h-3 w-3 text-black" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
-                {settingsSuccess ? (<span className="flex items-center gap-1"><svg className="w-3.5 h-3.5 stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Saved</span>) : isSavingSettings ? 'Updating...' : 'Commit Changes'}
+
+            <div className="flex gap-2.5 text-xs font-bold pt-3">
+              <button disabled={isSavingSettings} onClick={() => setShowSettings(false)} className="flex-1 py-3.5 bg-[#12141a] border border-slate-800 text-slate-400 rounded-xl active:scale-95 transition-all font-bold disabled:opacity-40">Cancel</button>
+              <button disabled={isSavingSettings} onClick={saveSettings} className={`flex-1 py-3.5 rounded-xl active:scale-95 transition-all font-bold flex items-center justify-center gap-2 ${settingsSuccess ? 'bg-emerald-600 text-white' : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white hover:from-indigo-500 hover:to-violet-500'}`}>
+                {isSavingSettings && <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>}
+                {settingsSuccess ? (
+                  <span className="flex items-center gap-1.5 font-bold">
+                    <svg className="w-4 h-4 stroke-white" fill="none" viewBox="0 0 24 24" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                    Saved Successfully
+                  </span>
+                ) : isSavingSettings ? 'Commiting...' : 'Save Settings'}
               </button>
             </div>
           </div>
