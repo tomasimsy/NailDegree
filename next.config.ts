@@ -1,8 +1,12 @@
 import type { NextConfig } from 'next';
 import withPWA from 'next-pwa';
+import path from 'path';
 
 const nextConfig: NextConfig = {
-  turbopack: {}, // safe minimal config (or remove entirely if issues persist)
+  turbopack: {
+    // Explicitly set the project root to the current working directory
+    root: path.join(process.cwd()),
+  },
 };
 
 const pwaConfig = withPWA({
@@ -13,5 +17,5 @@ const pwaConfig = withPWA({
   buildExcludes: [/middleware-manifest.json$/],
 });
 
-// IMPORTANT: wrap once, export once
+// Wrap once, export once
 export default pwaConfig(nextConfig);
