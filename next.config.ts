@@ -9,8 +9,10 @@ const nextConfig: NextConfig = {
 };
 
 export default withPWA({
-  dest: 'public',           // service worker will be written to `public/sw.js`
+  dest: 'public',
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  // This is the key for Vercel
+  buildExcludes: [/middleware-manifest.json$/],
 })(nextConfig);
