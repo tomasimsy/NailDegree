@@ -14,13 +14,58 @@ export default function LoginPage() {
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Lazy load Supabase client only on the client side
+  // PWA Installation Engine Hooks
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstallable, setIsInstallable] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+
   useEffect(() => {
+    // 1. Lazy load Supabase client only on client side
     import('@/lib/supabase/client').then(({ createClient }) => {
       supabaseRef.current = createClient();
       setIsClient(true);
     });
+
+    // 2. Listen for the native PWA install banner prompt
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsInstallable(true);
+    };
+
+    // 3. Detect if the device is iOS Safari for native manual helper fallback
+    const detectIOS = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
+      const isStandalone = (window.navigator as any).standalone; // Checks if it's already installed
+      return isAppleDevice && !isStandalone;
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    if (detectIOS()) {
+      setIsIOS(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    
+    // Trigger the native browser installation confirmation prompt banner
+    deferredPrompt.prompt();
+    
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted the PWA install application request.');
+    }
+    
+    // Clear out prompt memory as it can only be triggered once safely
+    setDeferredPrompt(null);
+    setIsInstallable(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +93,6 @@ export default function LoginPage() {
     }
   };
 
-  // Consistent full-page loading state matching the dashboard setup
   if (!isClient) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFFFFF]">
@@ -59,7 +103,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF] text-[#0B1E23] px-5 font-sans antialiased">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFFFFF] text-[#0B1E23] px-5 font-sans antialiased">
       <div className="max-w-md w-full p-6 bg-[#FFFFFF] border-2 border-[#FFF0E2] rounded-[2rem] shadow-sm space-y-6">
         
         {/* Header Block matching Top Title Bar style */}
@@ -136,7 +180,31 @@ export default function LoginPage() {
             Database Pipeline Protected
           </span>
         </div>
+      </div>
 
+      {/* Dynamic PWA Trigger Section
+        Sits neatly centered below the authentication card frame
+      */}
+      <div className="w-full max-w-md mt-4 px-2">
+        {/* Android / Desktop Chrome Core Action Trigger Button */}
+        {isInstallable && (
+          <button
+            onClick={handleInstallClick}
+            className="w-full bg-[#FFF0E2] hover:bg-[#FFF0E2]/80 text-[#E29A49] border border-[#E29A49]/30 font-bold text-xs py-3 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 animate-fade-in"
+          >
+            📥 Install NTrack App for Offline Access
+          </button>
+        )}
+
+        {/* iOS Native Safe Fallback Alert Instruction Block */}
+        {isIOS && (
+          <div className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl p-3 text-center text-[11px] font-medium text-slate-600 shadow-sm space-y-1 animate-fade-in">
+            <p className="font-bold text-[#1A434E]">Using an Apple Device?</p>
+            <p>
+              Tap the <span className="font-bold underline text-blue-500">Share button</span> at the bottom of Safari, then choose <span className="font-bold text-[#0B1E23]">“Add to Home Screen”</span> to run natively.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
