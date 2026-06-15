@@ -1,54 +1,45 @@
-const CACHE_NAME = 'ntrack-v2'; // increment version when changing
-const urlsToCache = [
-  '/',
-  '/manifest.json',
-  '/icons/icon.png',
-  '/screenshots/mobile.png',
-  '/screenshots/desktop.png'
-  // Add your main JS/CSS bundles – but they are generated with hash names, difficult to hardcode.
-  // Instead, let the service worker cache them on demand via fetch.
-];
+importScripts('https://storage.googleapis.com/workbox-cdn/releases/5.1.2/workbox-sw.js');
 
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      // Try to cache each URL individually; ignore failures
-      return Promise.allSettled(
-        urlsToCache.map(url => cache.add(url).catch(err => console.warn(`Failed to cache ${url}:`, err)))
-      );
-    })
-  );
-  self.skipWaiting(); // activate immediately
+const CACHE_NAME = 'ntrack-offline-v1';
+const offlineFallbackPage = '/offline.html';
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request).then(response => {
-      if (response) return response;
-      return fetch(event.request).then(fetchResponse => {
-        // Cache successful responses for future offline use (optional)
-        if (fetchResponse && fetchResponse.status === 200) {
-          const responseClone = fetchResponse.clone();
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseClone);
-          });
+self.addEventListener('install', async (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.add(offlineFallbackPage))
+  );
+});
+
+if (workbox.navigationPreload.isSupported()) {
+  workbox.navigationPreload.enable();
+}
+
+self.addEventListener('fetch', (event) => {
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          const preloadResp = await event.preloadResponse;
+          if (preloadResp) return preloadResp;
+
+          const networkResp = await fetch(event.request);
+          return networkResp;
+        } catch (error) {
+          const cache = await caches.open(CACHE_NAME);
+          const cachedResp = await cache.match(offlineFallbackPage);
+          return cachedResp;
         }
-        return fetchResponse;
-      }).catch(() => {
-        // If offline and not cached, maybe return a fallback page
-        return caches.match('/');
-      });
-    })
-  );
-});
-
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.filter(name => name !== CACHE_NAME).map(name => caches.delete(name))
-      );
-    })
-  );
-  self.clients.claim();
+      })()
+    );
+  } else {
+    // For non-navigation requests, use network-first strategy (optional)
+    event.respondWith(
+      fetch(event.request).catch(() => caches.match(event.request))
+    );
+  }
 });

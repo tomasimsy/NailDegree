@@ -14,37 +14,32 @@ export default function LoginPage() {
   const [isClient, setIsClient] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // PWA Installation Engine Hooks
+  // PWA state
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // 1. Lazy load Supabase client only on client side
+    // 1. Lazy load Supabase client
     import('@/lib/supabase/client').then(({ createClient }) => {
       supabaseRef.current = createClient();
       setIsClient(true);
     });
 
-    // 2. Listen for the native PWA install banner prompt
+    // 2. Listen for native install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       setIsInstallable(true);
     };
-
-    // 3. Detect if the device is iOS Safari for native manual helper fallback
-    const detectIOS = () => {
-      const userAgent = window.navigator.userAgent.toLowerCase();
-      const isAppleDevice = /iphone|ipad|ipod/.test(userAgent);
-      const isStandalone = (window.navigator as any).standalone; // Checks if it's already installed
-      return isAppleDevice && !isStandalone;
-    };
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    if (detectIOS()) {
-      setIsIOS(true);
-    }
+
+    // 3. Detect iOS (Safari) for manual instructions
+    const isIOSDevice = () => {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      return /iphone|ipad|ipod/.test(userAgent) && !(window.navigator as any).standalone;
+    };
+    setIsIOS(isIOSDevice());
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -53,16 +48,9 @@ export default function LoginPage() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    
-    // Trigger the native browser installation confirmation prompt banner
     deferredPrompt.prompt();
-    
     const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('User accepted the PWA install application request.');
-    }
-    
-    // Clear out prompt memory as it can only be triggered once safely
+    if (outcome === 'accepted') console.log('PWA installed');
     setDeferredPrompt(null);
     setIsInstallable(false);
   };
@@ -73,21 +61,20 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     if (!supabaseRef.current) {
-      setError('Initializing system... please try again');
+      setError('System initializing, please wait...');
       setIsSubmitting(false);
       return;
     }
 
     try {
       const { error } = await supabaseRef.current.auth.signInWithPassword({ email, password });
-
       if (error) {
         setError(error.message);
       } else {
         router.push('/dashboard');
       }
-    } catch (err) {
-      setError('An unexpected communication error occurred.');
+    } catch {
+      setError('Network error. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -95,113 +82,106 @@ export default function LoginPage() {
 
   if (!isClient) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFFFFF]">
-        <div className="w-10 h-10 border-4 border-[#1A434E] border-t-transparent rounded-full animate-spin mb-4" />
-        <div className="text-[#1A434E] font-medium tracking-wide animate-pulse">Initializing application...</div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white">
+        <div className="w-10 h-10 border-4 border-teal-800 border-t-transparent rounded-full animate-spin mb-4" />
+        <div className="text-teal-800 font-medium">Loading secure portal...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#FFFFFF] text-[#0B1E23] px-5 font-sans antialiased">
-      <div className="max-w-md w-full p-6 bg-[#FFFFFF] border-2 border-[#FFF0E2] rounded-[2rem] shadow-sm space-y-6">
-        
-        {/* Header Block matching Top Title Bar style */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white px-5 font-sans">
+      <div className="max-w-md w-full p-6 bg-white border-2 border-[#FFF0E2] rounded-3xl shadow-sm space-y-6">
+        {/* Header */}
         <div className="text-center space-y-1">
-          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-[#E29A49]">
-            Secure Access Portal
-          </p>
-          <h2 className="text-2xl font-black text-[#0B1E23] tracking-tight">
-            Technician Login
-          </h2>
+          <p className="text-[0.7rem] font-bold uppercase tracking-widest text-amber-600">Secure Access Portal</p>
+          <h2 className="text-2xl font-black text-teal-900 tracking-tight">Technician Login</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Error Message styled like the toast error state */}
           {error && (
-            <div className="bg-red-500 text-white text-xs text-center font-bold px-4 py-3 rounded-2xl border border-red-600 animate-slide-in shadow-sm">
+            <div className="bg-red-500 text-white text-xs text-center font-bold px-4 py-3 rounded-2xl">
               ⚠️ {error}
             </div>
           )}
 
-          {/* Email input component matching setting drawers row */}
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-[#1A434E] block pl-1">
-              Email Address
-            </label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-teal-800 block pl-1">Email</label>
             <input
               type="email"
-              placeholder="name@company.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#FFF0E2]/30 border border-[#E29A49]/20 rounded-xl px-4 py-3 text-sm font-medium text-[#0B1E23] focus:outline-none focus:ring-2 focus:ring-[#1A434E]/20 focus:border-[#1A434E] transition-all shadow-inner"
+              className="w-full bg-[#FFF0E2]/30 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-800/20 focus:border-teal-800 transition-all"
               required
               disabled={isSubmitting}
             />
           </div>
 
-          {/* Password input component matching setting drawers row */}
           <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold tracking-wider text-[#1A434E] block pl-1">
-              Password
-            </label>
+            <label className="text-[10px] uppercase font-bold tracking-wider text-teal-800 block pl-1">Password</label>
             <input
               type="password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#FFF0E2]/30 border border-[#E29A49]/20 rounded-xl px-4 py-3 text-sm font-medium text-[#0B1E23] focus:outline-none focus:ring-2 focus:ring-[#1A434E]/20 focus:border-[#1A434E] transition-all shadow-inner"
+              className="w-full bg-[#FFF0E2]/30 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-800/20 focus:border-teal-800 transition-all"
               required
               disabled={isSubmitting}
             />
           </div>
 
-          {/* Primary Action Button matching the settings/custom action triggers */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-[#1A434E] hover:bg-[#1A434E]/90 text-white font-bold text-sm py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:pointer-events-none"
+            className="w-full bg-teal-800 hover:bg-teal-800/90 text-white font-bold text-sm py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Authenticating Credentials...</span>
+                <span>Authenticating...</span>
               </>
             ) : (
-              <span>Sign In to Workspace</span>
+              <span>Sign In</span>
             )}
           </button>
         </form>
 
-        {/* Footer Brand Node */}
         <div className="text-center pt-2">
-          <span className="text-[9px] font-mono font-bold bg-[#FFF0E2] rounded-full px-3 py-1 text-[#E29A49] shadow-inner">
-            Database Pipeline Protected
+          <span className="text-[9px] font-mono font-bold bg-[#FFF0E2] rounded-full px-3 py-1 text-amber-600">
+            Secure workspace
           </span>
         </div>
       </div>
 
-      {/* Dynamic PWA Trigger Section
-        Sits neatly centered below the authentication card frame
-      */}
-      <div className="w-full max-w-md mt-4 px-2">
-        {/* Android / Desktop Chrome Core Action Trigger Button */}
+      {/* PWA Install Section */}
+      <div className="w-full max-w-md mt-4 px-2 space-y-2">
+        {/* Automatic install button (appears when beforeinstallprompt fires) */}
         {isInstallable && (
           <button
             onClick={handleInstallClick}
-            className="w-full bg-[#FFF0E2] hover:bg-[#FFF0E2]/80 text-[#E29A49] border border-[#E29A49]/30 font-bold text-xs py-3 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 animate-fade-in"
+            className="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 font-bold text-xs py-3 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2"
           >
-            📥 Install NTrack App for Offline Access
+            📥 Install NTrack App (Offline ready)
           </button>
         )}
 
-        {/* iOS Native Safe Fallback Alert Instruction Block */}
-        {isIOS && (
-          <div className="w-full bg-slate-50 border border-slate-200/60 rounded-2xl p-3 text-center text-[11px] font-medium text-slate-600 shadow-sm space-y-1 animate-fade-in">
-            <p className="font-bold text-[#1A434E]">Using an Apple Device?</p>
+        {/* Manual Android instructions (fallback) */}
+        {!isInstallable && !isIOS && (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-[11px] font-medium text-slate-600 space-y-1">
+            <p className="font-bold text-teal-800">📱 Install on Android</p>
             <p>
-              Tap the <span className="font-bold underline text-blue-500">Share button</span> at the bottom of Safari, then choose <span className="font-bold text-[#0B1E23]">“Add to Home Screen”</span> to run natively.
+              Tap Chrome menu <span className="font-bold">⋮</span> → <span className="font-bold">"Add to Home screen"</span>
+            </p>
+          </div>
+        )}
+
+        {/* Manual iOS instructions */}
+        {isIOS && (
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-[11px] font-medium text-slate-600 space-y-1">
+            <p className="font-bold text-teal-800">🍏 Install on iPhone / iPad</p>
+            <p>
+              Tap Share <span className="text-base">📤</span> → <span className="font-bold">"Add to Home Screen"</span>
             </p>
           </div>
         )}

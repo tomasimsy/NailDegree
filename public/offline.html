@@ -1,17 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Offline</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Offline - NTrack</title>
   <style>
-    body { font-family: system-ui, -apple-system; text-align: center; padding: 2rem; background: #0A0A0C; color: white; }
-    h1 { font-size: 1.5rem; margin-bottom: 1rem; }
-    p { color: #aaa; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #EBF2F7 0%, #F4F8FA 100%);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .card {
+      max-width: 380px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 2rem;
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.1);
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #0B1E23;
+      margin-bottom: 0.5rem;
+    }
+    p {
+      color: #2c4f5e;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      margin-bottom: 1.5rem;
+    }
+    button {
+      background: #1A434E;
+      border: none;
+      color: white;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      border-radius: 2rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    button:hover {
+      background: #0e2f38;
+      transform: scale(0.97);
+    }
+    .retry {
+      margin-top: 0.5rem;
+      background: #E29A49;
+    }
+    .retry:hover {
+      background: #c98535;
+    }
+    footer {
+      margin-top: 1.5rem;
+      font-size: 0.7rem;
+      color: #6c8b96;
+    }
   </style>
 </head>
 <body>
-  <h1>📴 You're offline</h1>
-  <p>Connect to the internet to use the technician app.</p>
+  <div class="card">
+    <div class="icon">📡</div>
+    <h1>You're offline</h1>
+    <p>NTrack needs an internet connection to sync your services, tips, and commissions. Connect to Wi‑Fi or mobile data and try again.</p>
+    <button onclick="window.location.reload()">⟳ Retry connection</button>
+    <div><button class="retry" onclick="window.location.href = '/'">🏠 Go to Home</button></div>
+    <footer>Once reconnected, your data will sync automatically.</footer>
+  </div>
+  <script>
+    // Optional: listen for online event and reload
+    window.addEventListener('online', () => window.location.reload());
+  </script>
 </body>
 </html>
