@@ -13,14 +13,10 @@ export async function GET() {
     .single()
   if (!emp) return NextResponse.json({ error: 'Employee not found' }, { status: 404 })
 
-  // Get the timestamp 24 hours ago (rolling window)
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-
   const { data, error } = await supabase
     .from('service_transactions')
-    .select('id, actual_price, tip_amount, transaction_time')
+    .select('id, actual_price, tip_amount, commission_amount, transaction_time')
     .eq('employee_id', emp.id)
-    .gte('transaction_time', twentyFourHoursAgo)
     .order('transaction_time', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
