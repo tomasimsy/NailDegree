@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     default: 'NTrack',
     template: '%s | NTrack'
   },
-  description: 'Your PWA Description',
+  description: 'NTrack is a powerful web application designed to help nail technicians track their services, analyze performance, and optimize their business with precision.',
   manifest: '/manifest.json', // <-- Crucial: Forces the layout to cleanly fetch the public static JSON file
   icons: {
     apple: '/icons/icon-192x192.png',
