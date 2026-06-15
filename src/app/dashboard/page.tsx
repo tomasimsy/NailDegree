@@ -473,10 +473,10 @@ export default function DashboardPage() {
         <div className="max-w-md mx-auto px-5 pt-6 space-y-6">
 
           {/* Top Title Bar */}
-          <div className="flex justify-between items-center py-2">
+          <div className="flex justify-between items-center py-2 bg-[#1A434E] text-[#FFF0E2] rounded-3xl px-4 shadow-sm border border-[#E29A49]/20">
             <div>
-              <p className="text-[0.7rem] font-bold uppercase tracking-widest text-[#E29A49]">User Dashboard</p>
-              <h1 className="text-2xl font-black text-[#0B1E23] tracking-tight">{techName || 'Independent Builder'}</h1>
+              <p className="text-[0.7rem] font-bold uppercase tracking-widest text-[#E29A49]">Tho Nee - Dashboard</p>
+              <h1 className="text-2xl font-black   tracking-tight">{techName || 'Independent Builder'}</h1>
             </div>
             <button onClick={openSettings} className="w-11 h-11 rounded-xl bg-[#FFF0E2] border border-[#E29A49]/20 flex items-center justify-center hover:bg-[#E29A49]/20 text-lg transition-all active:scale-95 shadow-sm">
               ⚙️
