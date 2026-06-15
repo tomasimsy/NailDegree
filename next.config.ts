@@ -1,18 +1,16 @@
 import type { NextConfig } from 'next';
-import withPWAInit from '@ducanh2912/next-pwa';
+import withPWA from 'next-pwa';
 import path from 'path';
 
-// 1. Minimum valid configuration properties
-const withPWA = withPWAInit({
-  dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-});
-
-// 2. Base Next.js configuration
 const nextConfig: NextConfig = {
   turbopack: {
     root: path.join(process.cwd()),
   },
 };
 
-export default withPWA(nextConfig);
+export default withPWA({
+  dest: 'public',           // service worker will be written to `public/sw.js`
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+})(nextConfig);

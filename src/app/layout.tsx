@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister'
 import './globals.css'
 
 export const viewport: Viewport = {
@@ -29,10 +30,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-  <link rel="manifest" href="/manifest.json" />
-</head>
-
-      <body>{children}</body>
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+      <body>
+        <ServiceWorkerRegister />
+        {children}
+      </body>
     </html>
   )
 }
