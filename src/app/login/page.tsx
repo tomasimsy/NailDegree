@@ -18,15 +18,14 @@ export default function LoginPage() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstallable, setIsInstallable] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [showInstallModal, setShowInstallModal] = useState(false);
 
   useEffect(() => {
-    // 1. Lazy load Supabase client
     import('@/lib/supabase/client').then(({ createClient }) => {
       supabaseRef.current = createClient();
       setIsClient(true);
     });
 
-    // 2. Listen for native install prompt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -34,7 +33,6 @@ export default function LoginPage() {
     };
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // 3. Detect iOS (Safari) for manual instructions
     const isIOSDevice = () => {
       const userAgent = window.navigator.userAgent.toLowerCase();
       return /iphone|ipad|ipod/.test(userAgent) && !(window.navigator as any).standalone;
@@ -47,12 +45,18 @@ export default function LoginPage() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') console.log('PWA installed');
-    setDeferredPrompt(null);
-    setIsInstallable(false);
+    // If the native prompt is available, use it
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') console.log('PWA installed');
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+      return;
+    }
+
+    // Otherwise, show instructions modal
+    setShowInstallModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,6 +84,7 @@ export default function LoginPage() {
     }
   };
 
+  // Loading state (uncommented for consistency)
   if (!isClient) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white">
@@ -91,11 +96,10 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-white px-5 font-sans">
-      <div className="max-w-md w-full p-6 bg-white border-2 border-[#FFF0E2] rounded-3xl shadow-sm space-y-6">
-        {/* Header */}
+      <div className="max-w-md w-full p-6 bg-white border-2 border-amber-50 rounded-3xl shadow-sm space-y-6">
         <div className="text-center space-y-1">
           <p className="text-[0.7rem] font-bold uppercase tracking-widest text-amber-600">Secure Access Portal</p>
-          <h2 className="text-2xl font-black text-teal-900 tracking-tight">Technician Login</h2>
+          <h2 className="text-2xl font-black text-gray-900 tracking-tight">Technician Login</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -112,7 +116,7 @@ export default function LoginPage() {
               placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#FFF0E2]/30 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-800/20 focus:border-teal-800 transition-all"
+              className="w-full bg-amber-50/30 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-800/20 focus:border-teal-800 transition-all"
               required
               disabled={isSubmitting}
             />
@@ -125,7 +129,7 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#FFF0E2]/30 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-teal-900 focus:outline-none focus:ring-2 focus:ring-teal-800/20 focus:border-teal-800 transition-all"
+              className="w-full bg-amber-50/30 border border-amber-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-800/20 focus:border-teal-800 transition-all"
               required
               disabled={isSubmitting}
             />
@@ -148,27 +152,24 @@ export default function LoginPage() {
         </form>
 
         <div className="text-center pt-2">
-          <span className="text-[9px] font-mono font-bold bg-[#FFF0E2] rounded-full px-3 py-1 text-amber-600">
+          <span className="text-[9px] font-mono font-bold bg-amber-50 rounded-full px-3 py-1 text-amber-600">
             Secure workspace
           </span>
         </div>
       </div>
 
-      {/* PWA Install Section */}
-      <div className="w-full max-w-md mt-4 px-2 space-y-2">
-        {/* Automatic install button (appears when beforeinstallprompt fires) */}
-        {isInstallable && (
-          <button
-            onClick={handleInstallClick}
-            className="w-full bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 font-bold text-xs py-3 rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2"
-          >
-            📥 Install NTrack App (Offline ready)
-          </button>
-        )}
+      {/* ALWAYS VISIBLE INSTALL BUTTON */}
+      <button
+        onClick={handleInstallClick}
+        className="w-full max-w-md mt-4 bg-teal-700 hover:bg-teal-800 text-white font-bold text-sm py-3.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+      >
+        📥 Download / Install NTrack App
+      </button>
 
-        {/* Manual Android instructions (fallback) */}
+      {/* Existing fallback instructions (if needed) – optional, but we keep them for extra guidance */}
+      <div className="w-full max-w-md mt-2 px-2 space-y-2">
         {!isInstallable && !isIOS && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-[11px] font-medium text-slate-600 space-y-1">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 text-center text-[11px] font-medium text-gray-600 space-y-1">
             <p className="font-bold text-teal-800">📱 Install on Android</p>
             <p>
               Tap Chrome menu <span className="font-bold">⋮</span> → <span className="font-bold">"Add to Home screen"</span>
@@ -176,9 +177,8 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Manual iOS instructions */}
         {isIOS && (
-          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center text-[11px] font-medium text-slate-600 space-y-1">
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-3 text-center text-[11px] font-medium text-gray-600 space-y-1">
             <p className="font-bold text-teal-800">🍏 Install on iPhone / iPad</p>
             <p>
               Tap Share <span className="text-base">📤</span> → <span className="font-bold">"Add to Home Screen"</span>
@@ -186,6 +186,38 @@ export default function LoginPage() {
           </div>
         )}
       </div>
+
+      {/* Modal for installation instructions (if prompt not available) */}
+      {showInstallModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 className="text-xl font-black text-gray-900">Install NTrack</h3>
+            <p className="text-sm text-gray-600">
+              {isIOS ? (
+                <>
+                  On iPhone/iPad, tap the <span className="font-bold">Share</span> button{' '}
+                  <span className="text-base">📤</span> and select{' '}
+                  <span className="font-bold">"Add to Home Screen"</span>.
+                </>
+              ) : (
+                <>
+                  On Android/Chrome, tap the menu <span className="font-bold">⋮</span> and select{' '}
+                  <span className="font-bold">"Add to Home Screen"</span> or use the install prompt if it appears.
+                </>
+              )}
+            </p>
+            <p className="text-xs text-gray-400">
+              If you see a browser prompt, follow its instructions to install the app.
+            </p>
+            <button
+              onClick={() => setShowInstallModal(false)}
+              className="w-full bg-teal-800 hover:bg-teal-800/90 text-white font-bold text-sm py-2.5 rounded-xl"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
