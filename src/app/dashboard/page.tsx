@@ -476,7 +476,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center py-2 bg-[#1A434E] text-[#FFF0E2] rounded-3xl px-4 shadow-sm border border-[#E29A49]/20">
             <div>
               <p className="text-[0.7rem] font-bold uppercase tracking-widest text-[#E29A49]">Nail Track</p>
-              <h1 className="text-2xl font-black   tracking-tight">{techName || 'Independent Builder'}</h1>
+              <h1 className="text-2xl font-black tracking-tight">{techName || 'Independent Builder'}</h1>
             </div>
             <button onClick={openSettings} className="w-11 h-11 rounded-xl bg-[#FFF0E2] border border-[#E29A49]/20 flex items-center justify-center hover:bg-[#E29A49]/20 text-lg transition-all active:scale-95 shadow-sm">
               ⚙️
@@ -484,30 +484,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-5">
-            {/* Tip Card */}
-            {/* <div className="bg-[#FFF0E2] rounded-3xl p-5 border border-[#E29A49]/10 shadow-sm relative">
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-[#1A434E]">Enter Tip Amount</label>
-                <span className="text-[10px] font-bold bg-[#E29A49] px-2 py-0.5 rounded-md text-white">Active</span>
-              </div>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#1A434E] font-extrabold">$</span>
-                <input
-                  type="number"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={tipAmount}
-                  onChange={(e) => setTipAmount(e.target.value)}
-                  className="w-full bg-[#FFFFFF] border border-[#E29A49]/20 rounded-2xl pl-8 pr-12 py-3.5 text-base font-mono font-bold text-[#0B1E23] focus:outline-none focus:ring-2 focus:ring-[#1A434E]/20 focus:border-[#1A434E] transition-all shadow-sm"
-                  placeholder="0.00"
-                />
-                {tipAmount && parseFloat(tipAmount) > 0 && (
-                  <button onClick={() => setTipAmount('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-red-500 hover:text-red-600 font-bold active:scale-90 transition-all">
-                    Clear
-                  </button>
-                )}
-              </div>
-            </div> */}
 
             {/* Quick buttons */}
             <div className="bg-[#1A434E] rounded-3xl shadow-md p-4 text-white relative overflow-hidden">
@@ -558,7 +534,111 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Daily totals */}
+            {/* Today's services list */}
+            <div className="bg-[#1A434E] rounded-3xl p-5 shadow-sm">
+              <div className="flex justify-between items-center mb-3 px-1">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFF0E2]">Today's Services Logged</h2>
+                <span className="text-[10px] font-mono font-bold bg-[#FFF0E2] text-[#1A434E] rounded-full px-2.5 py-0.5 shadow-inner">
+                  {transactions.length} Items Listed
+                </span>
+              </div>
+              {transactions.length === 0 ? (
+                <div className="text-center py-10 text-[#FFF0E2]/60 text-xs italic">No items logged yet today.</div>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                  {transactions.map((t) => {
+                    const isDeleting = deletingId === t.id
+                    const isEditing = editingTip?.id === t.id
+                    return (
+                      <div key={t.id} className={`flex items-center justify-between bg-[#FFF0E2]/90 rounded-xl p-3 border border-[#FFF0E2] transition-all hover:bg-[#FFF0E2] shadow-sm ${isDeleting ? 'opacity-30 translate-x-4' : ''}`}>
+                        <div>
+                          <div className="font-mono font-bold text-[#0B1E23] text-sm">${t.actual_price.toFixed(2)}</div>
+                          <div className="text-[9px] text-[#1A434E]/70 font-mono mt-0.5">
+                            {new Date(t.transaction_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative flex items-center">
+                            <span className="absolute left-2 text-[9px] font-bold text-[#1A434E]/70 uppercase">Tip</span>
+                            {isEditing ? (
+                              <input
+                                type="number"
+                                step="0.01"
+                                inputMode="decimal"
+                                value={editingTip.value}
+                                onChange={(e) => setEditingTip({ id: t.id, value: e.target.value })}
+                                onBlur={() => {
+                                  if (editingTip) {
+                                    const newTip = parseFloat(editingTip.value) || 0
+                                    updateTip(t.id, newTip)
+                                    setEditingTip(null)
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const newTip = parseFloat(editingTip?.value || '0') || 0
+                                    updateTip(t.id, newTip)
+                                    setEditingTip(null)
+                                  }
+                                }}
+                                autoFocus
+                                className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#1A434E] focus:outline-none focus:ring-1 focus:ring-[#1A434E]"
+                              />
+                            ) : (
+                              <button
+                                onClick={() => setEditingTip({ id: t.id, value: t.tip_amount.toString() })}
+                                className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white/80 hover:bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#E29A49]/30 transition-all cursor-text"
+                              >
+                                ${t.tip_amount.toFixed(2)}
+                              </button>
+                            )}
+                          </div>
+                          <button onClick={() => deleteTransaction(t.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg transition-all active:scale-90">
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            
+            {/* ==================== NEW: Daily Totals Card ==================== */}
+            <div className="bg-[#1A434E] rounded-3xl p-5 shadow-sm text-white">
+              <div className="flex justify-between items-center mb-3">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFF0E2]">Daily Totals</h2>
+                <span className="text-[10px] font-mono font-bold bg-[#E29A49] text-white px-2.5 py-0.5 rounded-full shadow-inner">Today</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[9px] text-[#FFF0E2]/60 uppercase">Gross</p>
+                  <p className="text-lg font-mono font-bold">${dailyTotals.gross.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-[#FFF0E2]/60 uppercase">Tips</p>
+                  <p className="text-lg font-mono font-bold">${dailyTotals.tips.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-[#FFF0E2]/60 uppercase">Commission</p>
+                  <p className="text-lg font-mono font-bold">${dailyTotals.commission.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-[#FFF0E2]/60 uppercase">Total (Comm+Tips)</p>
+                  <p className="text-lg font-mono font-bold text-[#E29A49]">${dailyTotals.total.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-[#FFF0E2]/60 uppercase">Cash ({cashSplitPct}%)</p>
+                  <p className="text-lg font-mono font-bold">${dailyTotals.cashAmount.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] text-[#FFF0E2]/60 uppercase">Check ({checkSplitPct}%)</p>
+                  <p className="text-lg font-mono font-bold">${dailyTotals.checkAmount.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Daily totals – existing two‑column cards */}
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-[#1A434E] rounded-3xl p-5 text-white flex flex-col justify-between shadow-sm min-h-[160px] transition-transform active:scale-95 border border-[#E29A49]/10">
                 <div className="flex justify-between items-start">
@@ -595,75 +675,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Today's services list */}
-          <div className="bg-[#1A434E] rounded-3xl p-5 shadow-sm">
-  <div className="flex justify-between items-center mb-3 px-1">
-    <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFF0E2]">Today's Services Logged</h2>
-    <span className="text-[10px] font-mono font-bold bg-[#FFF0E2] text-[#1A434E] rounded-full px-2.5 py-0.5 shadow-inner">
-      {transactions.length} Items Listed
-    </span>
-  </div>
-  {transactions.length === 0 ? (
-    <div className="text-center py-10 text-[#FFF0E2]/60 text-xs italic">No items logged yet today.</div>
-  ) : (
-    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-      {transactions.map((t) => {
-        const isDeleting = deletingId === t.id
-        const isEditing = editingTip?.id === t.id
-        return (
-          <div key={t.id} className={`flex items-center justify-between bg-[#FFF0E2]/90 rounded-xl p-3 border border-[#FFF0E2] transition-all hover:bg-[#FFF0E2] shadow-sm ${isDeleting ? 'opacity-30 translate-x-4' : ''}`}>
-            <div>
-              <div className="font-mono font-bold text-[#0B1E23] text-sm">${t.actual_price.toFixed(2)}</div>
-              <div className="text-[9px] text-[#1A434E]/70 font-mono mt-0.5">
-                {new Date(t.transaction_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </div>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <div className="relative flex items-center">
-                <span className="absolute left-2 text-[9px] font-bold text-[#1A434E]/70 uppercase">Tip</span>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={editingTip.value}
-                    onChange={(e) => setEditingTip({ id: t.id, value: e.target.value })}
-                    onBlur={() => {
-                      if (editingTip) {
-                        const newTip = parseFloat(editingTip.value) || 0
-                        updateTip(t.id, newTip)
-                        setEditingTip(null)
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const newTip = parseFloat(editingTip?.value || '0') || 0
-                        updateTip(t.id, newTip)
-                        setEditingTip(null)
-                      }
-                    }}
-                    autoFocus
-                    className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#1A434E] focus:outline-none focus:ring-1 focus:ring-[#1A434E]"
-                  />
-                ) : (
-                  <button
-                    onClick={() => setEditingTip({ id: t.id, value: t.tip_amount.toString() })}
-                    className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white/80 hover:bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#E29A49]/30 transition-all cursor-text"
-                  >
-                    ${t.tip_amount.toFixed(2)}
-                  </button>
-                )}
-              </div>
-              <button onClick={() => deleteTransaction(t.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg transition-all active:scale-90">
-                🗑️
-              </button>
-            </div>
-          </div>
-        )
-      })}
-    </div>
-  )}
-</div>
+
 
             {/* Date Range Selector */}
             <div className="bg-[#FFF0E2]/60 rounded-3xl border border-[#1A434E] shadow-sm p-5 space-y-4">
@@ -711,7 +723,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Weekly & Monthly Cards (abbreviated) */}
+            {/* Weekly & Monthly Cards */}
             <div className="bg-[#FFFFFF] border-2 border-[#1A434E] rounded-3xl shadow-sm p-5">
               <div className="flex justify-between items-center border-b border-[#FFF0E2] pb-2 mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#1A434E]">Weekly Totals</span>
@@ -846,7 +858,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Settings Modal (unchanged) – included here for completeness */}
+      {/* Settings Modal */}
       {showSettings && (
         <div className="fixed inset-0 bg-[#0B1E23]/50 backdrop-blur-xs flex items-end justify-center z-50" onClick={() => !isSavingSettings && setShowSettings(false)}>
           <div className="bg-[#FFFFFF] rounded-t-[2rem] w-full max-w-md p-6 pb-10 space-y-5 shadow-2xl border-t border-[#FFF0E2] text-[#0B1E23] animate-slide-up" onClick={(e) => e.stopPropagation()}>
