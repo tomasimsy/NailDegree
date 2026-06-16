@@ -1,18 +1,16 @@
 import type { NextConfig } from 'next';
 import withPWA from 'next-pwa';
-import path from 'path';
 
 const nextConfig: NextConfig = {
-  turbopack: {
-    root: path.join(process.cwd()),
-  },
+  // your existing config (if any)
+  reactStrictMode: true,
+  // optional: disable TypeScript build errors if needed
+  // typescript: { ignoreBuildErrors: true },
 };
 
 export default withPWA({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  // This is the key for Vercel
-  buildExcludes: [/middleware-manifest.json$/],
+  dest: 'public',           // service worker will be generated in public folder
+  register: true,           // automatically register the service worker
+  skipWaiting: true,        // force new service worker to take control
+  disable: process.env.NODE_ENV === 'development', // disable PWA in dev (optional)
 })(nextConfig);
