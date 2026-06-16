@@ -21,7 +21,6 @@ export async function proxy(request: NextRequest) {
             request.cookies.set(name, value)
           )
           response = NextResponse.next({
-            
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -49,5 +48,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    /*
+     * Exclude:
+     * - Next.js internal assets (_next/static, _next/image)
+     * - favicon.ico
+     * - PWA manifest and service worker
+     * - Icon and screenshot folders (so they can be accessed without auth)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|sw.js|icons/|screenshots/).*)',
+  ],
 }
