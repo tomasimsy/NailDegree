@@ -31,6 +31,16 @@ export default function DashboardPage() {
   const supabaseRef = useRef<any>(null)
   const [isClient, setIsClient] = useState(false)
 
+  // View & Filter State
+  const [viewDate, setViewDate] = useState<string>(new Date().toISOString().slice(0, 10))
+  const [viewLabel, setViewLabel] = useState<string>('Today')
+
+  const switchDate = (date: string, label: string) => {
+    setViewDate(date)
+    setViewLabel(label)
+    fetchData(date)
+  }
+
   // State Management
   const [techName, setTechName] = useState('')
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -107,9 +117,11 @@ export default function DashboardPage() {
     })
   }, [])
 
+ 
+
   useEffect(() => {
-    if (isClient) fetchData()
-  }, [isClient])
+  if (isClient) fetchData(viewDate)
+}, [isClient])
 
   useEffect(() => {
     if (!isClient) return
@@ -148,45 +160,47 @@ export default function DashboardPage() {
     }
   }
 
-  const fetchData = async () => {
-    if (!supabaseRef.current) return
-    try {
-      const { data: { user } } = await supabaseRef.current.auth.getUser()
-      if (!user) return
+const fetchData = async (date?: string) => {
+  if (!supabaseRef.current) return
+  try {
+    const { data: { user } } = await supabaseRef.current.auth.getUser()
+    if (!user) return
 
-      const { data: emp } = await supabaseRef.current
-        .from('employees')
-        .select('full_name, commission_percentage, quick_buttons, default_range_start, default_range_end, cash_split, check_split')
-        .eq('auth_user_id', user.id)
-        .single()
+    const targetDate = date || viewDate  // use provided date or current viewDate
 
-      if (emp) {
-        setTechName(emp.full_name)
-        setCommissionPct(emp.commission_percentage ?? 15)
-        setCashSplitPct(emp.cash_split ?? 70)
-        setCheckSplitPct(emp.check_split ?? 30)
-        setQuickButtons(emp.quick_buttons || [35, 45, 40, 55, 65])
+    const { data: emp } = await supabaseRef.current
+      .from('employees')
+      .select('full_name, commission_percentage, quick_buttons, default_range_start, default_range_end, cash_split, check_split')
+      .eq('auth_user_id', user.id)
+      .single()
 
-        if (emp.default_range_start && emp.default_range_end) {
-          setRangeStart(emp.default_range_start)
-          setRangeEnd(emp.default_range_end)
-        } else {
-          setPreset7Days()
-        }
+    if (emp) {
+      setTechName(emp.full_name)
+      setCommissionPct(emp.commission_percentage ?? 15)
+      setCashSplitPct(emp.cash_split ?? 70)
+      setCheckSplitPct(emp.check_split ?? 30)
+      setQuickButtons(emp.quick_buttons || [35, 45, 40, 55, 65])
+
+      if (emp.default_range_start && emp.default_range_end) {
+        setRangeStart(emp.default_range_start)
+        setRangeEnd(emp.default_range_end)
+      } else {
+        setPreset7Days()
       }
-
-      const res = await fetch('/api/transactions')
-      if (res.ok) {
-        const data = await res.json()
-        setTransactions(data)
-      }
-
-      await fetchWeeklyTotals()
-    } catch (error) {
-      console.error(error)
-      showNotification('Error loading database', 'error')
     }
+
+    const res = await fetch(`/api/transactions?date=${targetDate}`)
+    if (res.ok) {
+      const data = await res.json()
+      setTransactions(data)
+    }
+
+    await fetchWeeklyTotals()
+  } catch (error) {
+    console.error(error)
+    showNotification('Error loading database', 'error')
   }
+}
 
   const fetchWeeklyTotals = async () => {
     try {
@@ -535,74 +549,124 @@ export default function DashboardPage() {
             </div>
 
             {/* Today's services list */}
-            <div className="bg-[#1A434E] rounded-3xl p-5 shadow-sm">
-              <div className="flex justify-between items-center mb-3 px-1">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFF0E2]">Today's Services Logged</h2>
-                <span className="text-[10px] font-mono font-bold bg-[#FFF0E2] text-[#1A434E] rounded-full px-2.5 py-0.5 shadow-inner">
-                  {transactions.length} Items Listed
-                </span>
+           {/* Today's services list */}
+<div className="bg-[#1A434E] rounded-3xl p-5 shadow-sm">
+  <div className="flex justify-between items-center mb-3 px-1">
+    <h2 className="text-xs font-bold uppercase tracking-wider text-[#FFF0E2]">
+      {viewLabel} Services
+    </h2>
+    <div className="flex items-center gap-2">
+      {/* Only show the yesterday button when viewing today */}
+      {viewLabel === 'Today' && (
+        <button
+          onClick={() => {
+            const yesterday = new Date()
+            yesterday.setDate(yesterday.getDate() - 1)
+            setViewDate(yesterday.toISOString().slice(0, 10))
+            setViewLabel('Yesterday')
+            fetchData(yesterday.toISOString().slice(0, 10))
+          }}
+          className="text-[10px] font-bold bg-[#FFF0E2]/20 hover:bg-[#FFF0E2]/40 text-[#FFF0E2] px-3 py-1 rounded-full transition-all"
+        >
+          📅 Yesterday
+        </button>
+      )}
+      {viewLabel === 'Yesterday' && (
+        <button
+          onClick={() => {
+            const today = new Date().toISOString().slice(0, 10)
+            setViewDate(today)
+            setViewLabel('Today')
+            fetchData(today)
+          }}
+          className="text-[10px] font-bold bg-[#E29A49] text-[#0B1E23] px-3 py-1 rounded-full transition-all hover:bg-[#E29A49]/90"
+        >
+          ← Today
+        </button>
+      )}
+      <span className="text-[10px] font-mono font-bold bg-[#FFF0E2] text-[#1A434E] rounded-full px-2.5 py-0.5 shadow-inner">
+        {transactions.length} Items
+      </span>
+    </div>
+  </div>
+
+  {transactions.length === 0 ? (
+    <div className="text-center py-10 text-[#FFF0E2]/60 text-xs italic">
+      No services logged for {viewLabel.toLowerCase()}.
+      {viewLabel === 'Today' && (
+        <button
+          onClick={() => {
+            const yesterday = new Date()
+            yesterday.setDate(yesterday.getDate() - 1)
+            setViewDate(yesterday.toISOString().slice(0, 10))
+            setViewLabel('Yesterday')
+            fetchData(yesterday.toISOString().slice(0, 10))
+          }}
+          className="block mx-auto mt-3 bg-[#E29A49] text-[#0B1E23] px-4 py-1.5 rounded-full text-[10px] font-bold hover:bg-[#E29A49]/90 transition-all"
+        >
+          View Yesterday's List →
+        </button>
+      )}
+    </div>
+  ) : (
+    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+      {transactions.map((t) => {
+        const isDeleting = deletingId === t.id
+        const isEditing = editingTip?.id === t.id
+        return (
+          <div key={t.id} className={`flex items-center justify-between bg-[#FFF0E2]/90 rounded-xl p-3 border border-[#FFF0E2] transition-all hover:bg-[#FFF0E2] shadow-sm ${isDeleting ? 'opacity-30 translate-x-4' : ''}`}>
+            <div>
+              <div className="font-mono font-bold text-[#0B1E23] text-sm">${t.actual_price.toFixed(2)}</div>
+              <div className="text-[9px] text-[#1A434E]/70 font-mono mt-0.5">
+                {new Date(t.transaction_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
-              {transactions.length === 0 ? (
-                <div className="text-center py-10 text-[#FFF0E2]/60 text-xs italic">No items logged yet today.</div>
-              ) : (
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {transactions.map((t) => {
-                    const isDeleting = deletingId === t.id
-                    const isEditing = editingTip?.id === t.id
-                    return (
-                      <div key={t.id} className={`flex items-center justify-between bg-[#FFF0E2]/90 rounded-xl p-3 border border-[#FFF0E2] transition-all hover:bg-[#FFF0E2] shadow-sm ${isDeleting ? 'opacity-30 translate-x-4' : ''}`}>
-                        <div>
-                          <div className="font-mono font-bold text-[#0B1E23] text-sm">${t.actual_price.toFixed(2)}</div>
-                          <div className="text-[9px] text-[#1A434E]/70 font-mono mt-0.5">
-                            {new Date(t.transaction_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <div className="relative flex items-center">
-                            <span className="absolute left-2 text-[9px] font-bold text-[#1A434E]/70 uppercase">Tip</span>
-                            {isEditing ? (
-                              <input
-                                type="number"
-                                step="0.01"
-                                inputMode="decimal"
-                                value={editingTip.value}
-                                onChange={(e) => setEditingTip({ id: t.id, value: e.target.value })}
-                                onBlur={() => {
-                                  if (editingTip) {
-                                    const newTip = parseFloat(editingTip.value) || 0
-                                    updateTip(t.id, newTip)
-                                    setEditingTip(null)
-                                  }
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') {
-                                    const newTip = parseFloat(editingTip?.value || '0') || 0
-                                    updateTip(t.id, newTip)
-                                    setEditingTip(null)
-                                  }
-                                }}
-                                autoFocus
-                                className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#1A434E] focus:outline-none focus:ring-1 focus:ring-[#1A434E]"
-                              />
-                            ) : (
-                              <button
-                                onClick={() => setEditingTip({ id: t.id, value: t.tip_amount.toString() })}
-                                className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white/80 hover:bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#E29A49]/30 transition-all cursor-text"
-                              >
-                                ${t.tip_amount.toFixed(2)}
-                              </button>
-                            )}
-                          </div>
-                          <button onClick={() => deleteTransaction(t.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg transition-all active:scale-90">
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
             </div>
+            <div className="flex items-center gap-2.5">
+              <div className="relative flex items-center">
+                <span className="absolute left-2 text-[9px] font-bold text-[#1A434E]/70 uppercase">Tip</span>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    step="0.01"
+                    inputMode="decimal"
+                    value={editingTip.value}
+                    onChange={(e) => setEditingTip({ id: t.id, value: e.target.value })}
+                    onBlur={() => {
+                      if (editingTip) {
+                        const newTip = parseFloat(editingTip.value) || 0
+                        updateTip(t.id, newTip)
+                        setEditingTip(null)
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const newTip = parseFloat(editingTip?.value || '0') || 0
+                        updateTip(t.id, newTip)
+                        setEditingTip(null)
+                      }
+                    }}
+                    autoFocus
+                    className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#1A434E] focus:outline-none focus:ring-1 focus:ring-[#1A434E]"
+                  />
+                ) : (
+                  <button
+                    onClick={() => setEditingTip({ id: t.id, value: t.tip_amount.toString() })}
+                    className="w-20 pl-7 pr-2 py-1 text-right text-xs bg-white/80 hover:bg-white font-mono font-bold text-[#0B1E23] rounded-lg border border-[#E29A49]/30 transition-all cursor-text"
+                  >
+                    ${t.tip_amount.toFixed(2)}
+                  </button>
+                )}
+              </div>
+              <button onClick={() => deleteTransaction(t.id)} className="text-red-500 hover:text-red-700 p-1.5 rounded-lg transition-all active:scale-90">
+                🗑️
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )}
+</div>
             
             {/* ==================== NEW: Daily Totals Card ==================== */}
             <div className="bg-[#1A434E] rounded-3xl p-5 shadow-sm text-white">
