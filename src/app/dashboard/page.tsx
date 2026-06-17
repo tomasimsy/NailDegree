@@ -40,7 +40,7 @@ export default function DashboardPage() {
     setViewLabel(label)
     fetchData(date)
   }
-
+ 
   // State Management
   const [techName, setTechName] = useState('')
   const [transactions, setTransactions] = useState<Transaction[]>([])
